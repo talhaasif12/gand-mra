@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teacher Dashboard</title>
     <link rel="stylesheet" href="style.css">
     <script src="data.js"></script>
@@ -14,14 +15,14 @@
 
     <div class="container">
         
-        <!-- 1. NOTIFICATIONS -->
+        <!-- BROADCAST ANNOUNCEMENT SECTION -->
         <div class="card">
             <h2>Broadcast Announcement</h2>
-            <textarea id="msg-txt" rows="2" placeholder="Send a message to all students..."></textarea>
-            <button onclick="sendMsg()" style="width:auto;">Send Message</button>
+            <textarea id="msg-txt" rows="3" placeholder="Send a message to all students..."></textarea>
+            <button onclick="sendMsg()" style="width:auto; margin-top:10px;">Send Message</button>
         </div>
 
-        <!-- 2. COURSE SELECTION -->
+        <!-- CLASS MANAGEMENT SECTION -->
         <div class="card">
             <h2>Class Management</h2>
             <div class="form-grid">
@@ -36,31 +37,36 @@
             </div>
         </div>
 
-        <!-- 3. ACTIONS -->
+        <!-- ACTIONS SECTION -->
         <div class="card" id="action-area" style="display:none;">
             <h3>Perform Actions</h3>
             <div class="form-grid">
-                <!-- Attendance -->
-                <div style="background:#f9fcfb; padding:20px; border-radius:10px; border:1px solid #e0e0e0;">
+                <!-- Attendance Management -->
+                <div style="background:#f8fafb; padding:20px; border-radius:12px; border:1px solid #e5e7eb;">
                     <label>Attendance Status</label>
-                    <select id="att-status"><option>Present</option><option>Absent</option></select>
+                    <select id="att-status">
+                        <option>Present</option>
+                        <option>Absent</option>
+                    </select>
                     <button onclick="saveAtt()">Mark Attendance</button>
                 </div>
-                <!-- Results -->
-                <div style="background:#f9fcfb; padding:20px; border-radius:10px; border:1px solid #e0e0e0;">
+                
+                <!-- Marks Upload -->
+                <div style="background:#f8fafb; padding:20px; border-radius:12px; border:1px solid #e5e7eb;">
                     <label>Upload Marks</label>
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                        <input type="number" id="q" placeholder="Quiz">
-                        <input type="number" id="a" placeholder="Assign">
-                        <input type="number" id="m" placeholder="Mid">
-                        <input type="number" id="f" placeholder="Final">
+                        <input type="number" id="q" placeholder="Quiz" min="0" max="100">
+                        <input type="number" id="a" placeholder="Assignment" min="0" max="100">
+                        <input type="number" id="m" placeholder="Mid Term" min="0" max="100">
+                        <input type="number" id="f" placeholder="Final" min="0" max="100">
                     </div>
                     <button onclick="saveRes()">Upload Result</button>
                 </div>
             </div>
             
-            <div style="margin-top:20px; font-weight:bold; color:#11998e; font-size:16px;">
-                Current Status: Attendance: <span id="v-att">0%</span> | Grade: <span id="v-grade">-</span>
+            <!-- Current Statistics -->
+            <div style="margin-top:20px; padding:15px; background:linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-radius:10px; font-weight:600; color:#1e40af; font-size:15px;">
+                📊 Current Status: Attendance: <span id="v-att">0%</span> | Grade: <span id="v-grade">-</span>
             </div>
         </div>
     </div>
@@ -73,10 +79,13 @@
             const myCourses = all.filter(c => c.teacherId === user.id);
             const sel = document.getElementById('course-select');
             
-            if(myCourses.length === 0) sel.innerHTML = "<option>No Courses Assigned</option>";
-            else {
+            if(myCourses.length === 0) {
+                sel.innerHTML = "<option>No Courses Assigned</option>";
+            } else {
                 sel.innerHTML = "<option value=''>Select Course</option>";
-                myCourses.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.name} (${c.program}-${c.section})</option>`);
+                myCourses.forEach(c => {
+                    sel.innerHTML += `<option value="${c.id}">${c.name} (${c.program}-${c.section})</option>`;
+                });
             }
         }
 
@@ -85,67 +94,117 @@
             const area = document.getElementById('action-area');
             const sSel = document.getElementById('student-select');
             
-            if(!cId) { area.style.display='none'; return; }
+            if(!cId) { 
+                area.style.display='none'; 
+                return; 
+            }
             
             const regs = getAllRegs().filter(r => r.courseId === cId);
             const users = getAllUsers();
             
             sSel.innerHTML = "<option value=''>Select Student</option>";
-            regs.forEach(r => {
-                const s = users.find(u => u.id === r.studentId);
-                if(s) sSel.innerHTML += `<option value="${s.id}">${s.name}</option>`;
-            });
+            
+            if (regs.length === 0) {
+                sSel.innerHTML += "<option value=''>No students registered</option>";
+            } else {
+                regs.forEach(r => {
+                    const s = users.find(u => u.id === r.studentId);
+                    if(s) sSel.innerHTML += `<option value="${s.id}">${s.name} (${s.id})</option>`;
+                });
+            }
+            
             area.style.display = 'block';
         }
 
         function saveAtt() {
             const cId = parseInt(document.getElementById('course-select').value);
             const sId = document.getElementById('student-select').value;
-            if(!sId) return alert("Select Student");
             
-            let list = JSON.parse(localStorage.getItem('portal_att_v20')) || [];
+            if(!sId || sId === '') return alert("Please select a student");
+            
+            let list = JSON.parse(localStorage.getItem('academic_attendance_db')) || [];
             const date = new Date().toLocaleDateString();
+            
+            // Remove existing entry for today
             list = list.filter(x => !(x.courseId === cId && x.studentId === sId && x.date === date));
-            list.push({ courseId: cId, studentId: sId, date: date, status: document.getElementById('att-status').value });
-            localStorage.setItem('portal_att_v20', JSON.stringify(list));
-            alert("Attendance Marked");
+            
+            // Add new entry
+            list.push({ 
+                courseId: cId, 
+                studentId: sId, 
+                date: date, 
+                status: document.getElementById('att-status').value 
+            });
+            
+            localStorage.setItem('academic_attendance_db', JSON.stringify(list));
+            alert("Attendance Marked Successfully");
             loadStats();
         }
 
         function saveRes() {
             const cId = parseInt(document.getElementById('course-select').value);
             const sId = document.getElementById('student-select').value;
-            if(!sId) return alert("Select Student");
+            
+            if(!sId || sId === '') return alert("Please select a student");
 
-            let list = JSON.parse(localStorage.getItem('portal_marks_v20')) || [];
+            const q = Number(document.getElementById('q').value) || 0;
+            const a = Number(document.getElementById('a').value) || 0;
+            const m = Number(document.getElementById('m').value) || 0;
+            const f = Number(document.getElementById('f').value) || 0;
+
+            let list = JSON.parse(localStorage.getItem('academic_marks_db')) || [];
+            
+            // Remove existing marks
             list = list.filter(x => !(x.courseId === cId && x.studentId === sId));
+            
+            // Add new marks
             list.push({
-                courseId: cId, studentId: sId,
-                q: Number(document.getElementById('q').value),
-                a: Number(document.getElementById('a').value),
-                m: Number(document.getElementById('m').value),
-                f: Number(document.getElementById('f').value)
+                courseId: cId, 
+                studentId: sId,
+                q: q,
+                a: a,
+                m: m,
+                f: f
             });
-            localStorage.setItem('portal_marks_v20', JSON.stringify(list));
-            alert("Result Uploaded");
+            
+            localStorage.setItem('academic_marks_db', JSON.stringify(list));
+            alert("Result Uploaded Successfully");
             loadStats();
         }
 
         function sendMsg() {
-            const txt = document.getElementById('msg-txt').value;
-            if(txt) { sendNotification(txt, user.name); alert("Sent"); document.getElementById('msg-txt').value=""; }
+            const txt = document.getElementById('msg-txt').value.trim();
+            if(!txt) return alert("Please enter a message");
+            
+            sendNotification(txt, user.name); 
+            alert("Message Sent Successfully"); 
+            document.getElementById('msg-txt').value = "";
         }
 
         function loadStats() {
             const cId = parseInt(document.getElementById('course-select').value);
             const sId = document.getElementById('student-select').value;
             
-            const allAtt = JSON.parse(localStorage.getItem('portal_att_v20')) || [];
+            if(!sId || sId === '') return;
+            
+            // Load attendance
+            const allAtt = JSON.parse(localStorage.getItem('academic_attendance_db')) || [];
             const cAtt = allAtt.filter(a => a.courseId === cId && a.studentId === sId);
             const present = cAtt.filter(a => a.status === 'Present').length;
             const perc = cAtt.length ? Math.round((present/cAtt.length)*100) : 0;
-
             document.getElementById('v-att').innerText = perc + "%";
+            
+            // Load marks and grade
+            const allMarks = JSON.parse(localStorage.getItem('academic_marks_db')) || [];
+            const studentMarks = allMarks.find(m => m.courseId === cId && m.studentId === sId);
+            
+            if (studentMarks) {
+                const total = studentMarks.q + studentMarks.a + studentMarks.m + studentMarks.f;
+                const grade = calculateGrade(total);
+                document.getElementById('v-grade').innerText = grade + " (" + total + "%)";
+            } else {
+                document.getElementById('v-grade').innerText = "Not Graded";
+            }
         }
 
         loadCourses();
