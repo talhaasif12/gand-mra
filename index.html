@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>University Portal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>University Portal - Login</title>
     <link rel="stylesheet" href="style.css">
     <script src="data.js"></script>
 </head>
@@ -10,21 +11,21 @@
 
     <div class="login-card">
         <div class="login-header">
-            <h2>Welcome</h2>
+            <h2>Welcome Back</h2>
             <p>Academic Management System</p>
         </div>
 
         <div style="text-align: left;">
             <label style="font-weight:600; color:#444; font-size:13px;">USER ID</label>
-            <input type="text" id="uid" placeholder="Enter your ID">
+            <input type="text" id="uid" placeholder="Enter your ID" autocomplete="username">
             
             <label style="font-weight:600; color:#444; font-size:13px; margin-top:15px; display:block;">PASSWORD</label>
-            <input type="password" id="pass" placeholder="Enter your Password">
+            <input type="password" id="pass" placeholder="Enter your Password" autocomplete="current-password">
         </div>
         
         <button class="login-btn" onclick="handleLogin()">Sign In</button>
         
-        <p id="error-msg" style="color: #e74c3c; margin-top: 15px; font-size: 13px; font-weight: bold;"></p>
+        <p id="error-msg" style="color: #ef4444; margin-top: 15px; font-size: 13px; font-weight: bold;"></p>
         
         <div style="margin-top: 25px; font-size: 12px; color: #aaa;">
             Secure Access • Authorized Personnel Only
@@ -35,6 +36,11 @@
         function handleLogin() {
             const id = document.getElementById('uid').value;
             const pass = document.getElementById('pass').value;
+
+            if (!id || !pass) {
+                document.getElementById('error-msg').innerText = "Please enter both ID and Password";
+                return;
+            }
 
             const user = authUser(id, pass);
 
@@ -47,6 +53,16 @@
                 document.getElementById('error-msg').innerText = "Invalid ID or Password";
             }
         }
+
+        // Allow Enter key to submit
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('pass').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') handleLogin();
+            });
+            document.getElementById('uid').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') handleLogin();
+            });
+        });
     </script>
 </body>
 </html>
