@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="data.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Student Portal</h1>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </header>
+
+    <div class="container">
+        <!-- 1. PROFILE -->
+        <div class="card">
+            <h2>Welcome, <span id="s-name"></span></h2>
+            <p><strong>Program:</strong> <span id="s-prog"></span> | <strong>ID:</strong> <span id="s-id"></span></p>
+        </div>
+
+        <!-- 2. NOTIFICATIONS -->
+        <div class="card">
+            <h3>📢 Announcements</h3>
+            <div id="notif-area"></div>
+        </div>
+
+        <!-- 3. COURSE REGISTRATION -->
+        <div class="card">
+            <h2>Course Registration</h2>
+            <table id="reg-table">
+                <thead><tr><th>Course</th><th>Section</th><th>Teacher</th><th>Action</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- 4. DASHBOARD & ANALYTICS -->
+        <div class="card">
+            <h2>My Performance</h2>
+            <div id="alert-box" class="alert">Warning: Low Attendance in some courses!</div>
+            
+            <table id="dash-table">
+                <thead><tr><th>Course</th><th>Attendance</th><th>Marks</th><th>Grade</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const user = checkSession('student');
+        document.getElementById('s-name').innerText = user.name;
+        document.getElementById('s-id').innerText = user.id;
+        document.getElementById('s-prog').innerText = user.program;
+
+        const msgs = getAllMsgs();
+        const nArea = document.getElementById('notif-area');
+        if(msgs.length === 0) nArea.innerHTML = "No new messages.";
+        else msgs.forEach(m => nArea.innerHTML += `<div class="notification"><strong>${m.sender}:</strong> ${m.text} <small>(${m.date})</small></div>`);
+
+        const courses = getAllCourses().filter(c => c.program === user.program);
+        const regTable = document.querySelector('#reg-table tbody');
+        const myRegs = getAllRegs().filter(r => r.studentId === user.id);
+
+        if(courses.length === 0) regTable.innerHTML = "<tr><td colspan='4'>No courses available for your program.</td></tr>";
+        else {
+            courses.forEach(c => {
+                const isReg = myRegs.find(r => r.courseId === c.id);
+                const btn = isReg ? `<span class="badge badge-green">Registered</span>` : `<button onclick="reg(${c.id})" style="width:auto; margin:0; padding:5px 10px;">Register</button>`;
+                regTable.innerHTML += `<tr><td>${c.name}</td><td>${c.section}</td><td>${c.teacherName}</td><td>${btn}</td></tr>`;
+            });
+        }
+
+        function reg(cId) {
+            const res = registerCourse(user.id, cId);
+            alert(res.msg);
+            if(res.success) location.reload();
+        }
+
+        const dashTable = document.querySelector('#dash-table tbody');
+        const allAtt = JSON.parse(localStorage.getItem('portal_att_v20')) || [];
+        const allMarks = JSON.parse(localStorage.getItem('portal_marks_v20')) || [];
+        let lowAtt = false;
+
+        if(myRegs.length === 0) dashTable.innerHTML = "<tr><td colspan='4'>Register for courses to see data.</td></tr>";
+        else {
+            myRegs.forEach(r => {
+                const c = courses.find(course => course.id === r.courseId);
+                if(!c) return;
+
+                const cAtt = allAtt.filter(x => x.courseId === c.id && x.studentId === user.id);
+                const present = cAtt.filter(x => x.status === 'Present').length;
+                const attPerc = cAtt.length ? Math.round((present/cAtt.length)*100) : 0;
+                if(attPerc < 75 && cAtt.length > 0) lowAtt = true;
+
+                const m = allMarks.find(x => x.courseId === c.id && x.studentId === user.id);
+                let total = 0, grade = "-";
+                if(m) {
+                    total = m.q + m.a + m.m + m.f;
+                    grade = calculateGrade(total);
+                }
+
+                dashTable.innerHTML += `
+                    <tr>
+                        <td>${c.name}</td>
+                        <td>
+                            <div style="font-weight:bold;">${attPerc}%</div>
+                            <div class="bar-container"><div class="bar-fill" style="width:${attPerc}%"></div></div>
+                        </td>
+                        <td>${total}</td>
+                        <td>${grade}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        if(lowAtt) document.getElementById('alert-box').style.display = 'block';
+    </script>
+</body>
+</html>
