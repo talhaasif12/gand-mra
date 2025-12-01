@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Dashboard</title>
     <link rel="stylesheet" href="style.css">
     <script src="data.js"></script>
@@ -13,34 +14,52 @@
     </header>
 
     <div class="container">
-        <!-- 1. PROFILE -->
+        
+        <!-- PROFILE SECTION -->
         <div class="card">
             <h2>Welcome, <span id="s-name"></span></h2>
-            <p><strong>Program:</strong> <span id="s-prog"></span> | <strong>ID:</strong> <span id="s-id"></span></p>
+            <p style="font-size:15px; color:#6b7280; margin-top:8px;">
+                <strong>Program:</strong> <span id="s-prog"></span> | 
+                <strong>Student ID:</strong> <span id="s-id"></span>
+            </p>
         </div>
 
-        <!-- 2. NOTIFICATIONS -->
+        <!-- ANNOUNCEMENTS SECTION -->
         <div class="card">
             <h3>📢 Announcements</h3>
             <div id="notif-area"></div>
         </div>
 
-        <!-- 3. COURSE REGISTRATION -->
+        <!-- COURSE REGISTRATION SECTION -->
         <div class="card">
             <h2>Course Registration</h2>
             <table id="reg-table">
-                <thead><tr><th>Course</th><th>Section</th><th>Teacher</th><th>Action</th></tr></thead>
+                <thead>
+                    <tr>
+                        <th>Course</th>
+                        <th>Section</th>
+                        <th>Teacher</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
                 <tbody></tbody>
             </table>
         </div>
 
-        <!-- 4. DASHBOARD & ANALYTICS -->
+        <!-- PERFORMANCE DASHBOARD SECTION -->
         <div class="card">
             <h2>My Performance</h2>
-            <div id="alert-box" class="alert">Warning: Low Attendance in some courses!</div>
+            <div id="alert-box" class="alert">⚠️ Warning: Low Attendance in some courses!</div>
             
             <table id="dash-table">
-                <thead><tr><th>Course</th><th>Attendance</th><th>Marks</th><th>Grade</th></tr></thead>
+                <thead>
+                    <tr>
+                        <th>Course</th>
+                        <th>Attendance</th>
+                        <th>Total Marks</th>
+                        <th>Grade</th>
+                    </tr>
+                </thead>
                 <tbody></tbody>
             </table>
         </div>
@@ -48,52 +67,85 @@
 
     <script>
         const user = checkSession('student');
+        
+        // Display profile information
         document.getElementById('s-name').innerText = user.name;
         document.getElementById('s-id').innerText = user.id;
         document.getElementById('s-prog').innerText = user.program;
 
+        // Load and display announcements
         const msgs = getAllMsgs();
         const nArea = document.getElementById('notif-area');
-        if(msgs.length === 0) nArea.innerHTML = "No new messages.";
-        else msgs.forEach(m => nArea.innerHTML += `<div class="notification"><strong>${m.sender}:</strong> ${m.text} <small>(${m.date})</small></div>`);
+        
+        if(msgs.length === 0) {
+            nArea.innerHTML = "<p style='color:#999; text-align:center; padding:20px;'>No new announcements</p>";
+        } else {
+            msgs.forEach(m => {
+                nArea.innerHTML += `
+                    <div class="notification">
+                        <strong>${m.sender}:</strong> ${m.text} 
+                        <small style='color:#999;'>(${m.date})</small>
+                    </div>
+                `;
+            });
+        }
 
+        // Load available courses for registration
         const courses = getAllCourses().filter(c => c.program === user.program);
         const regTable = document.querySelector('#reg-table tbody');
         const myRegs = getAllRegs().filter(r => r.studentId === user.id);
 
-        if(courses.length === 0) regTable.innerHTML = "<tr><td colspan='4'>No courses available for your program.</td></tr>";
-        else {
+        if(courses.length === 0) {
+            regTable.innerHTML = "<tr><td colspan='4' style='text-align:center; color:#999;'>No courses available for your program</td></tr>";
+        } else {
             courses.forEach(c => {
                 const isReg = myRegs.find(r => r.courseId === c.id);
-                const btn = isReg ? `<span class="badge badge-green">Registered</span>` : `<button onclick="reg(${c.id})" style="width:auto; margin:0; padding:5px 10px;">Register</button>`;
-                regTable.innerHTML += `<tr><td>${c.name}</td><td>${c.section}</td><td>${c.teacherName}</td><td>${btn}</td></tr>`;
+                const btn = isReg 
+                    ? `<span class="badge badge-green">Registered</span>` 
+                    : `<button onclick="reg(${c.id})" style="width:auto; margin:0; padding:8px 16px;">Register</button>`;
+                
+                regTable.innerHTML += `
+                    <tr>
+                        <td>${c.name}</td>
+                        <td>${c.section}</td>
+                        <td>${c.teacherName}</td>
+                        <td>${btn}</td>
+                    </tr>
+                `;
             });
         }
 
+        // Course registration function
         function reg(cId) {
             const res = registerCourse(user.id, cId);
             alert(res.msg);
             if(res.success) location.reload();
         }
 
+        // Load performance dashboard
         const dashTable = document.querySelector('#dash-table tbody');
-        const allAtt = JSON.parse(localStorage.getItem('portal_att_v20')) || [];
-        const allMarks = JSON.parse(localStorage.getItem('portal_marks_v20')) || [];
+        const allAtt = JSON.parse(localStorage.getItem('academic_attendance_db')) || [];
+        const allMarks = JSON.parse(localStorage.getItem('academic_marks_db')) || [];
         let lowAtt = false;
 
-        if(myRegs.length === 0) dashTable.innerHTML = "<tr><td colspan='4'>Register for courses to see data.</td></tr>";
-        else {
+        if(myRegs.length === 0) {
+            dashTable.innerHTML = "<tr><td colspan='4' style='text-align:center; color:#999;'>Register for courses to see your performance</td></tr>";
+        } else {
             myRegs.forEach(r => {
                 const c = courses.find(course => course.id === r.courseId);
                 if(!c) return;
 
+                // Calculate attendance
                 const cAtt = allAtt.filter(x => x.courseId === c.id && x.studentId === user.id);
                 const present = cAtt.filter(x => x.status === 'Present').length;
                 const attPerc = cAtt.length ? Math.round((present/cAtt.length)*100) : 0;
+                
                 if(attPerc < 75 && cAtt.length > 0) lowAtt = true;
 
+                // Calculate marks and grade
                 const m = allMarks.find(x => x.courseId === c.id && x.studentId === user.id);
                 let total = 0, grade = "-";
+                
                 if(m) {
                     total = m.q + m.a + m.m + m.f;
                     grade = calculateGrade(total);
@@ -101,19 +153,28 @@
 
                 dashTable.innerHTML += `
                     <tr>
-                        <td>${c.name}</td>
+                        <td><strong>${c.name}</strong></td>
                         <td>
-                            <div style="font-weight:bold;">${attPerc}%</div>
-                            <div class="bar-container"><div class="bar-fill" style="width:${attPerc}%"></div></div>
+                            <div style="font-weight:bold; margin-bottom:6px;">${attPerc}%</div>
+                            <div class="bar-container">
+                                <div class="bar-fill" style="width:${attPerc}%"></div>
+                            </div>
                         </td>
-                        <td>${total}</td>
-                        <td>${grade}</td>
+                        <td style="font-weight:600;">${total > 0 ? total + '%' : 'Not graded'}</td>
+                        <td>
+                            <span class="badge ${grade === 'A' ? 'badge-green' : grade === 'F' ? 'badge-gray' : 'badge-blue'}">
+                                ${grade}
+                            </span>
+                        </td>
                     </tr>
                 `;
             });
         }
 
-        if(lowAtt) document.getElementById('alert-box').style.display = 'block';
+        // Show low attendance alert if needed
+        if(lowAtt) {
+            document.getElementById('alert-box').style.display = 'block';
+        }
     </script>
 </body>
 </html>
