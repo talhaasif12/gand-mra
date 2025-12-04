@@ -4,34 +4,379 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>University Portal - Login</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="data.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #0a0e27;
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Animated Background */
+        body::before {
+            content: "";
+            position: absolute;
+            width: 150%;
+            height: 150%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3), transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 107, 107, 0.3), transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(78, 205, 196, 0.2), transparent 50%);
+            animation: drift 20s ease-in-out infinite;
+            z-index: 0;
+        }
+
+        @keyframes drift {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(5%, 5%) rotate(5deg); }
+            66% { transform: translate(-5%, 3%) rotate(-5deg); }
+        }
+
+        /* Left Panel - Hero Section */
+        .hero-panel {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 0 80px;
+            color: white;
+        }
+
+        .hero-content h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4rem;
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, #ffffff 0%, #4ecdc4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-content p {
+            font-size: 1.25rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 40px;
+            max-width: 480px;
+            line-height: 1.8;
+        }
+
+        .feature-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 24px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .feature-item:hover {
+            transform: translateX(10px);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .feature-text h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .feature-text p {
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin: 0;
+        }
+
+        /* Right Panel - Login Form */
+        .login-panel {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 440px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 32px;
+            padding: 48px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin: 0 auto 20px;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .login-header h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 8px;
+        }
+
+        .login-header p {
+            color: #666;
+            font-size: 0.9375rem;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 20px;
+            color: #999;
+            pointer-events: none;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 16px 20px 16px 56px;
+            background: #f8f9fa;
+            border: 2px solid transparent;
+            border-radius: 16px;
+            font-size: 1rem;
+            font-family: 'Poppins', sans-serif;
+            color: #333;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            background: white;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        input::placeholder {
+            color: #aaa;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.0625rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            margin-top: 32px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        #error-msg {
+            text-align: center;
+            color: #ef4444;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-top: 20px;
+            min-height: 20px;
+        }
+
+        .footer-text {
+            text-align: center;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #e5e7eb;
+            color: #999;
+            font-size: 0.8125rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            body {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-panel {
+                display: none;
+            }
+
+            .login-panel {
+                padding: 20px;
+            }
+
+            .login-container {
+                padding: 32px 24px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .login-header h2 {
+                font-size: 1.5rem;
+            }
+
+            .login-container {
+                border-radius: 24px;
+                padding: 28px 20px;
+            }
+
+            input[type="text"],
+            input[type="password"] {
+                padding: 14px 18px 14px 52px;
+            }
+        }
+    </style>
 </head>
 <body class="login-body">
-
-    <div class="login-card">
-        <div class="login-header">
-            <h2>Welcome Back</h2>
-            <p>Academic Management System</p>
-        </div>
-
-        <div style="text-align: left;">
-            <label style="font-weight:600; color:#444; font-size:13px;">USER ID</label>
-            <input type="text" id="uid" placeholder="Enter your ID" autocomplete="username">
+    <!-- Left Hero Panel -->
+    <div class="hero-panel">
+        <div class="hero-content">
+            <h1>Elevate Your<br>Academic Journey</h1>
+            <p>A unified platform connecting students, educators, and administrators in one seamless experience.</p>
             
-            <label style="font-weight:600; color:#444; font-size:13px; margin-top:15px; display:block;">PASSWORD</label>
-            <input type="password" id="pass" placeholder="Enter your Password" autocomplete="current-password">
-        </div>
-        
-        <button class="login-btn" onclick="handleLogin()">Sign In</button>
-        
-        <p id="error-msg" style="color: #ef4444; margin-top: 15px; font-size: 13px; font-weight: bold;"></p>
-        
-        <div style="margin-top: 25px; font-size: 12px; color: #aaa;">
-            Secure Access • Authorized Personnel Only
+            <div class="feature-list">
+                <div class="feature-item">
+                    <div class="feature-icon">📚</div>
+                    <div class="feature-text">
+                        <h3>Course Management</h3>
+                        <p>Register and track your courses effortlessly</p>
+                    </div>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">📊</div>
+                    <div class="feature-text">
+                        <h3>Performance Analytics</h3>
+                        <p>Real-time insights into your academic progress</p>
+                    </div>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">🔔</div>
+                    <div class="feature-text">
+                        <h3>Instant Updates</h3>
+                        <p>Stay connected with announcements and notifications</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- Right Login Panel -->
+    <div class="login-panel">
+        <div class="login-container">
+            <div class="login-header">
+                <div class="logo">🎓</div>
+                <h2>Welcome Back</h2>
+                <p>Enter your credentials to continue</p>
+            </div>
+
+            <form onsubmit="return false;">
+                <div class="form-group">
+                    <label for="uid">User ID</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">👤</span>
+                        <input type="text" id="uid" placeholder="Enter your ID" autocomplete="username">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="pass">Password</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">🔒</span>
+                        <input type="password" id="pass" placeholder="Enter your password" autocomplete="current-password">
+                    </div>
+                </div>
+
+                <button type="button" class="login-btn" onclick="handleLogin()">Sign In</button>
+                
+                <p id="error-msg"></p>
+            </form>
+
+            <div class="footer-text">
+                🔐 Secure Access • Authorized Personnel Only
+            </div>
+        </div>
+    </div>
+
+    <script src="data.js"></script>
     <script>
         function handleLogin() {
             const id = document.getElementById('uid').value;
@@ -54,7 +399,6 @@
             }
         }
 
-        // Allow Enter key to submit
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('pass').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') handleLogin();
